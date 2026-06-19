@@ -14,6 +14,7 @@ dishes: dict[str, dict] = {
         "flavor": "原味",
         "status": "active",
         "description": "精选肥牛卷，适合番茄锅和麻辣锅。",
+        "deleted_at": None,
     },
     "dish_tripe": {
         "id": "dish_tripe",
@@ -22,6 +23,7 @@ dishes: dict[str, dict] = {
         "flavor": "爽脆",
         "status": "active",
         "description": "七上八下经典菜品，门店高频点单。",
+        "deleted_at": None,
     },
     "dish_mushroom": {
         "id": "dish_mushroom",
@@ -30,6 +32,7 @@ dishes: dict[str, dict] = {
         "flavor": "清鲜",
         "status": "seasonal",
         "description": "香菇、金针菇、蟹味菇组合。",
+        "deleted_at": None,
     },
 }
 

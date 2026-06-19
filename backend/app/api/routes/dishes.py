@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Response, status
 
-from app.schemas.dishes import Dish, DishCreate, DishUpdate, Specification, SpecificationCreate, SpecificationUpdate
+from app.schemas.dishes import Dish, DishCreate, DishUpdate, DishImpactCheck, Specification, SpecificationCreate, SpecificationUpdate
 from app.services import catalog_service
 
 router = APIRouter(tags=["dishes"])
@@ -19,6 +19,11 @@ def post_dish(payload: DishCreate) -> dict:
 @router.put("/dishes/{dish_id}", response_model=Dish)
 def put_dish(dish_id: str, payload: DishUpdate) -> dict:
     return catalog_service.update_dish(dish_id, payload)
+
+
+@router.get("/dishes/{dish_id}/impact-check", response_model=DishImpactCheck)
+def get_dish_impact_check(dish_id: str) -> dict:
+    return catalog_service.check_dish_impact(dish_id)
 
 
 @router.delete("/dishes/{dish_id}", status_code=status.HTTP_204_NO_CONTENT)

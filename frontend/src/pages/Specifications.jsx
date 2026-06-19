@@ -34,7 +34,17 @@ export function Specifications({ dishes, specifications, refresh }) {
     refresh()
   }
 
-  const dishName = (id) => dishes.find((dish) => dish.id === id)?.name || '未知菜品'
+  const dishName = (dishId) => {
+    const dish = dishes.find((d) => d.id === dishId)
+    if (dish) {
+      return dish.name
+    }
+    const linkedSpec = specifications.find((s) => s.dish_id === dishId)
+    if (linkedSpec) {
+      return `${linkedSpec.name || '未知'} (已删除菜品)`
+    }
+    return '未知菜品'
+  }
 
   return (
     <div className="two-column">

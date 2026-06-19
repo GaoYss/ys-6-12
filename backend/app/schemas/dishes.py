@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel, Field
 
 
@@ -5,7 +6,7 @@ class DishBase(BaseModel):
     name: str = Field(min_length=1, max_length=80)
     category: str = Field(min_length=1, max_length=40)
     flavor: str = Field(min_length=1, max_length=40)
-    status: str = Field(default="active", pattern="^(active|paused|seasonal)$")
+    status: str = Field(default="active", pattern="^(active|paused|seasonal|deleted)$")
     description: str = Field(default="", max_length=300)
 
 
@@ -23,6 +24,22 @@ class DishUpdate(BaseModel):
 
 class Dish(DishBase):
     id: str
+    deleted_at: datetime | None = None
+
+
+class DishImpactReference(BaseModel):
+    type: str
+    count: int
+    details: list[str]
+
+
+class DishImpactCheck(BaseModel):
+    dish_id: str
+    dish_name: str
+    has_references: bool
+    references: list[DishImpactReference]
+    spec_handling: str
+    risks: list[str]
 
 
 class SpecificationBase(BaseModel):

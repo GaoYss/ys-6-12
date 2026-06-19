@@ -25,6 +25,7 @@ export const api = {
   dishes: () => request('/dishes'),
   createDish: (payload) => request('/dishes', { method: 'POST', body: JSON.stringify(payload) }),
   updateDish: (id, payload) => request(`/dishes/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  checkDishImpact: (id) => request(`/dishes/${id}/impact-check`),
   deleteDish: (id) => request(`/dishes/${id}`, { method: 'DELETE' }),
   specifications: () => request('/specifications'),
   createSpecification: (payload) => request('/specifications', { method: 'POST', body: JSON.stringify(payload) }),

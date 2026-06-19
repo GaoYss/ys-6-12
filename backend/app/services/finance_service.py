@@ -2,17 +2,23 @@ from app.data import store
 from app.services.catalog_service import _spec_with_profit
 
 
-def profit_report() -> list[dict]:
+def profit_report(include_deleted: bool = True) -> list[dict]:
     lines = []
     for spec in store.specifications.values():
         dish = store.dishes.get(spec["dish_id"])
         if not dish:
             continue
+        is_deleted = dish.get("status") == "deleted"
+        if not include_deleted and is_deleted:
+            continue
         enriched = _spec_with_profit(spec)
+        dish_name = dish["name"]
+        if is_deleted:
+            dish_name = f"{dish_name} (已删除)"
         lines.append(
             {
                 "dish_id": dish["id"],
-                "dish_name": dish["name"],
+                "dish_name": dish_name,
                 "spec_name": enriched["name"],
                 "sale_price": enriched["sale_price"],
                 "cost": round(enriched["ingredient_cost"] + enriched["packaging_cost"], 2),

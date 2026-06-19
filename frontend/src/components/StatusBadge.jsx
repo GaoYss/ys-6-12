@@ -2,6 +2,7 @@ const labelMap = {
   active: '在售',
   paused: '暂停',
   seasonal: '季节',
+  deleted: '已删除',
   draft: '草稿',
   ordered: '已下单',
   received: '已入库',

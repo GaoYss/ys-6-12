@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Save, Trash2 } from 'lucide-react'
+import { AlertTriangle, Plus, Save, Trash2, X } from 'lucide-react'
 import { api } from '../api/client.js'
 import { EmptyState } from '../components/EmptyState.jsx'
 import { StatusBadge } from '../components/StatusBadge.jsx'
@@ -12,9 +12,19 @@ const emptyDish = {
   description: '',
 }
 
+const refTypeLabels = {
+  specifications: '规格引用',
+  purchase: '采购引用',
+  reports: '报表引用',
+}
+
 export function Catalog({ dishes, refresh }) {
   const [form, setForm] = useState(emptyDish)
   const [saving, setSaving] = useState(false)
+  const [deleteModal, setDeleteModal] = useState(null)
+  const [impactData, setImpactData] = useState(null)
+  const [loadingImpact, setLoadingImpact] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const updateField = (field, value) => setForm((current) => ({ ...current, [field]: value }))
 
@@ -32,9 +42,38 @@ export function Catalog({ dishes, refresh }) {
     refresh()
   }
 
-  const deleteDish = async (dish) => {
-    await api.deleteDish(dish.id)
-    refresh()
+  const openDeleteModal = async (dish) => {
+    setDeleteModal(dish)
+    setImpactData(null)
+    setLoadingImpact(true)
+    try {
+      const data = await api.checkDishImpact(dish.id)
+      setImpactData(data)
+    } catch (error) {
+      console.error('Failed to check impact:', error)
+    } finally {
+      setLoadingImpact(false)
+    }
+  }
+
+  const closeDeleteModal = () => {
+    setDeleteModal(null)
+    setImpactData(null)
+    setLoadingImpact(false)
+    setDeleting(false)
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteModal) return
+    setDeleting(true)
+    try {
+      await api.deleteDish(deleteModal.id)
+      closeDeleteModal()
+      refresh()
+    } catch (error) {
+      console.error('Failed to delete dish:', error)
+      setDeleting(false)
+    }
   }
 
   return (
@@ -73,7 +112,7 @@ export function Catalog({ dishes, refresh }) {
                         <button type="button" onClick={() => pauseDish(dish)}>
                           {dish.status === 'active' ? '暂停' : '上架'}
                         </button>
-                        <button className="danger" type="button" onClick={() => deleteDish(dish)} title="删除">
+                        <button className="danger" type="button" onClick={() => openDeleteModal(dish)} title="删除">
                           <Trash2 size={15} />
                         </button>
                       </div>
@@ -128,6 +167,86 @@ export function Catalog({ dishes, refresh }) {
           </button>
         </form>
       </section>
+
+      {deleteModal && (
+        <div className="modal-overlay" onClick={closeDeleteModal}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>确认删除菜品</h3>
+              <button className="modal-close" onClick={closeDeleteModal} type="button">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <p>
+                确定要删除 <strong>{deleteModal.name}</strong> 吗？
+              </p>
+
+              {loadingImpact ? (
+                <div className="notice info">正在检查数据引用...</div>
+              ) : impactData ? (
+                <>
+                  {impactData.has_references && (
+                    <div className="notice warning">
+                      <AlertTriangle size={16} />
+                      <span>检测到 {impactData.references.reduce((sum, r) => sum + r.count, 0)} 处数据引用，删除前请仔细阅读以下说明</span>
+                    </div>
+                  )}
+
+                  {impactData.references.length > 0 && (
+                    <div className="reference-list">
+                      {impactData.references.map((ref) => (
+                        <div key={ref.type} className="reference-item">
+                          <strong>{refTypeLabels[ref.type] || ref.type} ({ref.count} 条)</strong>
+                          <ul>
+                            {ref.details.slice(0, 5).map((detail, idx) => (
+                              <li key={idx}>{detail}</li>
+                            ))}
+                            {ref.details.length > 5 && <li>... 还有 {ref.details.length - 5} 条</li>}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="notice info">
+                    <strong>规格处理说明：</strong>
+                    <p style={{ marginTop: '6px', fontSize: '13px' }}>{impactData.spec_handling}</p>
+                  </div>
+
+                  {impactData.risks.length > 0 && (
+                    <div>
+                      <strong style={{ color: '#81520f', fontSize: '14px' }}>风险提示：</strong>
+                      <div className="risk-list" style={{ marginTop: '8px' }}>
+                        {impactData.risks.map((risk, idx) => (
+                          <div key={idx} className="risk-item">{risk}</div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {!impactData.has_references && (
+                    <div className="notice info">此菜品暂无相关规格、采购或报表引用，可安全删除。</div>
+                  )}
+                </>
+              ) : (
+                <div className="notice error">无法检查数据引用，请稍后重试。</div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button type="button" onClick={closeDeleteModal} disabled={deleting}>取消</button>
+              <button
+                className="danger"
+                type="button"
+                onClick={confirmDelete}
+                disabled={loadingImpact || deleting || !impactData}
+              >
+                {deleting ? '删除中...' : '确认删除'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
